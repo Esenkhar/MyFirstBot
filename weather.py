@@ -1,6 +1,7 @@
 import requests
 import os
 from datetime import datetime
+import zoneinfo
 
 OWM_key = os.getenv('OWM_TOKEN')
 
@@ -11,13 +12,13 @@ def get_weather(city):
         'q': city,
         'appid': api_key,
         'units': 'metric',
-        'land': 'en'
+        'lang': 'en'
     }
     response = requests.get(base_url, params=params)
     return response.json()
 
 def process_weather_data(city):
-    weather_data=get_weather(city)
+    weather_data = get_weather(city)
     if weather_data.get('cod') != 200:
         return 'City is not found'
 
@@ -27,8 +28,11 @@ def process_weather_data(city):
     humidity = weather_data['main']['humidity']
     pressure = weather_data['main']['pressure']
     wind_speed = weather_data['wind']['speed']
-    sunrise=datetime.fromtimestamp(weather_data['sys']['sunrise'])
-    sunset=datetime.fromtimestamp(weather_data['sys']['sunset'])
+
+    # Преобразуем время с учетом часового пояса
+    tz = zoneinfo.ZoneInfo("Europe/Kyiv")
+    sunrise = datetime.fromtimestamp(weather_data['sys']['sunrise'], tz=zoneinfo.ZoneInfo("UTC")).astimezone(tz)
+    sunset = datetime.fromtimestamp(weather_data['sys']['sunset'], tz=zoneinfo.ZoneInfo("UTC")).astimezone(tz)
 
     return (f'Weather in {city}:\n'
             f'Description: {weather}\n'
@@ -40,5 +44,5 @@ def process_weather_data(city):
             f'Sunset: {sunset.strftime("%H:%M:%S")}'
             )
 
-if __name__ == '__main':
-    print(process_weather_data(get_weather('Kharkiv')))
+if __name__ == '__main__':
+    print(process_weather_data('Харьков'))
